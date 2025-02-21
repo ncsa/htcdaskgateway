@@ -28,19 +28,15 @@ class HTCGatewayCluster(GatewayCluster):
         self.image_registry = image_registry
         
         #set default image if the image is not specified by user
-        if not kwargs.get('image') and (not self.cluster_options or not self.cluster_options.image):
-            kwargs['image'] = self.defaultImage
-            print("Apptainer_image: ", kwargs['image'])
-            self.apptainer_image = self.defaultImage
-        else:
-            print("Apptainer_image: ", kwargs['image'])
-            self.apptainer_image = kwargs.get('image')
+        # if not kwargs.get('image') and (not self.cluster_options or not self.cluster_options.image):
+        #     kwargs['image'] = self.defaultImage
+        #     print("Apptainer_image: ", kwargs['image'])
+        #     self.apptainer_image = self.defaultImage
+        # else:
+        #     print("Apptainer_image: ", kwargs['image'])
+        #     self.apptainer_image = kwargs.get('image')
             
-        kwargs['image'] = self.image_registry + "/" + self.apptainer_image
-
-        dir_command = "[ -d \"/cvmfs/unpacked.cern.ch/" + self.image_registry + "/" + self.apptainer_image + "\" ]" 
-        if os.system(dir_command):
-            sys.exit("Image not allowed. Images must be from /cvmfs/unpacked.cern.ch")
+        # kwargs['image'] = self.image_registry + "/" + self.apptainer_image
 
         super().__init__(**kwargs)
    
@@ -85,14 +81,14 @@ class HTCGatewayCluster(GatewayCluster):
         x509_file = f"x509up_u{os.getuid()}"
         security = self.security
         cluster_name = self.name
-        tmproot = f"/uscmst1b_scratch/lpc1/3DayLifetime/{username}/{cluster_name}"
+        tmproot = f"./stage/{username}/{cluster_name}"
         condor_logdir = f"{tmproot}/condor"
         credentials_dir = f"{tmproot}/dask-credentials"
         worker_space_dir = f"{tmproot}/dask-worker-space"
 
-        image_name = "/cvmfs/unpacked.cern.ch/" + self.image_registry + "/" + self.apptainer_image
+        # image_name = "/cvmfs/unpacked.cern.ch/" + self.image_registry + "/" + self.apptainer_image
         
-        logger.info("Creating with image " + image_name)
+        # logger.info("Creating with image " + image_name)
 
         os.makedirs(tmproot, exist_ok=True)
         os.makedirs(condor_logdir, exist_ok=True)
@@ -103,9 +99,9 @@ class HTCGatewayCluster(GatewayCluster):
             f.write(security.tls_cert)
         with open(f"{credentials_dir}/dask.pem", 'w') as f:
             f.write(security.tls_key)
-        with open(f"{credentials_dir}/api-token", 'w') as f:
-            f.write(os.environ['JUPYTERHUB_API_TOKEN'])
-            
+        # with open(f"{credentials_dir}/api-token", 'w') as f:
+        #     f.write(os.environ['JUPYTERHUB_API_TOKEN'])
+
         # Just pick a random Schedd
         #schedd_ad = coll.locate(htcondor.DaemonTypes.Schedd)
             
@@ -137,7 +133,8 @@ Queue """+str(n)+""
     
         with open(f"{tmproot}/htcdask_submitfile.jdl", 'w+') as f:
             f.writelines(jdl)
-        
+
+        image_name = "foo:latest"
         # Prepare singularity command
         singularity_cmd = """#!/bin/bash
 export APPTAINERENV_DASK_GATEWAY_WORKER_NAME=$2
@@ -159,7 +156,7 @@ dask worker --name $2 --tls-ca-file /etc/dask-credentials/dask.crt --tls-cert /e
         os.chmod(f"{tmproot}/start.sh", 0o775)
         
         logger.info(" Sandbox : "+tmproot)
-        logger.info(" Using image: "+image_name)
+        # logger.info(" Using image: "+image_name)
         logger.debug(" Submitting HTCondor job(s) for "+str(n)+" workers")
 
         # We add this to avoid a bug on Farruk's condor_submit wrapper (a fix is in progress)
@@ -167,10 +164,12 @@ dask worker --name $2 --tls-ca-file /etc/dask-credentials/dask.crt --tls-cert /e
 
         # Submit our jdl, print the result and call the cluster widget
         cmd = "/usr/local/bin/condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
-        call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
+        logger.info(" Submitting HTCondor job(s) for "+str(n)+" workers"+" with command: "+cmd)
+        # call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
         
         worker_dict = {}
-        clusterid = call.decode().rstrip()[:-1]
+        clusterid = "foo"
+        # clusterid = call.decode().rstrip()[:-1]
         worker_dict['ClusterId'] = clusterid
         worker_dict['Iwd'] = tmproot
         try:

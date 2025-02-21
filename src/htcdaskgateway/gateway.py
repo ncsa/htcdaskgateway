@@ -27,8 +27,8 @@ logger = logging.getLogger("htcdaskgateway.HTCGateway")
 class HTCGateway(Gateway):
     
     def __init__(self, **kwargs):
-        address = kwargs.pop('address', 'http://traefik-dask-gateway.dask-gateway.svc.cluster.local')
-        super().__init__(address, auth="jupyterhub", **kwargs)
+        address = kwargs.pop('address', 'https://dask.software-dev.ncsa.illinois.edu')
+        super().__init__(address, **kwargs)
     
     def new_cluster(self, cluster_options=None, shutdown_on_close=True, **kwargs):
         """Submit a new cluster to the gateway, and wait for it to be started.
@@ -54,7 +54,6 @@ class HTCGateway(Gateway):
         return HTCGatewayCluster(
             address=self.address,
             proxy_address=self.proxy_address,
-            public_address='https://dask-gateway.fnal.gov',
             auth=self.auth,
             asynchronous=self.asynchronous,
             loop=self.loop,
