@@ -21,20 +21,20 @@ logger = logging.getLogger("htcdaskgateway.GatewayCluster")
 class HTCGatewayCluster(GatewayCluster):
     
     def __init__(self, image_registry="registry.hub.docker.com", **kwargs):
-        self.scheduler_proxy_ip = kwargs.pop('', '131.225.218.222')
+        self.scheduler_proxy_ip = kwargs.pop('', 'dask.software-dev.ncsa.illinois.edu')
         self.batchWorkerJobs = []
         self.defaultImage = 'coffeateam/coffea-base-almalinux8:0.7.22-py3.10'
         self.cluster_options = kwargs.get('cluster_options')
         self.image_registry = image_registry
         
         #set default image if the image is not specified by user
-        # if not kwargs.get('image') and (not self.cluster_options or not self.cluster_options.image):
-        #     kwargs['image'] = self.defaultImage
-        #     print("Apptainer_image: ", kwargs['image'])
-        #     self.apptainer_image = self.defaultImage
-        # else:
-        #     print("Apptainer_image: ", kwargs['image'])
-        #     self.apptainer_image = kwargs.get('image')
+        if not kwargs.get('image') and (not self.cluster_options or not self.cluster_options.image):
+            kwargs['image'] = self.defaultImage
+            print("Apptainer_image: ", kwargs['image'])
+            self.apptainer_image = self.defaultImage
+        else:
+            print("Apptainer_image: ", kwargs['image'])
+            self.apptainer_image = kwargs.get('image')
             
         # kwargs['image'] = self.image_registry + "/" + self.apptainer_image
 
@@ -117,19 +117,19 @@ class HTCGatewayCluster(GatewayCluster):
         #+FERMIHTC_HTCDaskClusterOwner = """+username+"""
         
         # Prepare JDL
-        jdl = """executable = start.sh
+        jdl = """executable = """+tmproot+"""/start.sh
 arguments = """+cluster_name+""" htcdask-worker_$(Cluster)_$(Process)
 output = condor/htcdask-worker$(Cluster)_$(Process).out
 error = condor/htcdask-worker$(Cluster)_$(Process).err
 log = condor/htcdask-worker$(Cluster)_$(Process).log
 request_cpus = 4
 request_memory = 8GB
-+isDaskJob = True
-requirements = (isDaskNode == True)
+container_image=/u/bengal1/icrn/CLIMAS/xmip.sif
 should_transfer_files = yes
 transfer_input_files = """+credentials_dir+""", """+worker_space_dir+""" , """+condor_logdir+"""
 when_to_transfer_output = ON_EXIT_OR_EVICT
-Queue """+str(n)+""
+Queue """+str(n)+"""
+"""
     
         with open(f"{tmproot}/htcdask_submitfile.jdl", 'w+') as f:
             f.writelines(jdl)
@@ -138,18 +138,14 @@ Queue """+str(n)+""
         # Prepare singularity command
         singularity_cmd = """#!/bin/bash
 export APPTAINERENV_DASK_GATEWAY_WORKER_NAME=$2
-export APPTAINERENV_DASK_GATEWAY_API_URL="https://dask-gateway-api.fnal.gov/api"
+export APPTAINERENV_DASK_GATEWAY_API_URL="https://dask.software-dev.ncsa.illinois.edu/api"
 export APPTAINERENV_DASK_GATEWAY_CLUSTER_NAME=$1
-export APPTAINERENV_DASK_GATEWAY_API_TOKEN=/etc/dask-credentials/api-token
 #export APPTAINERENV_DASK_DISTRIBUTED__LOGGING__DISTRIBUTED="debug"
 
 worker_space_dir=${PWD}/dask-worker-space/$2
-mkdir $worker_space_dir
+mkdir -p $worker_space_dir
 
-cp """+x509_file+""" $worker_space_dir
-
-/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer exec -B ${worker_space_dir}:/srv/ -B dask-credentials:/etc/dask-credentials """+image_name+""" \
-dask worker --name $2 --tls-ca-file /etc/dask-credentials/dask.crt --tls-cert /etc/dask-credentials/dask.crt --tls-key /etc/dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --local-directory /srv --scheduler-sni daskgateway-"""+cluster_name+""" --nthreads 1 tls://"""+self.scheduler_proxy_ip+""":80"""
+dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"""+cluster_name+""" --nthreads 1 tls://"""+self.scheduler_proxy_ip+""":8786"""
     
         with open(f"{tmproot}/start.sh", 'w+') as f:
             f.writelines(singularity_cmd)
@@ -163,19 +159,18 @@ dask worker --name $2 --tls-ca-file /etc/dask-credentials/dask.crt --tls-cert /e
         os.environ['LS_COLORS']="ExGxBxDxCxEgEdxbxgxcxd"
 
         # Submit our jdl, print the result and call the cluster widget
-        cmd = "/usr/local/bin/condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
+        cmd = "/home/bengal1/condor/bin/condor_submit "+tmproot+"/htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
         logger.info(" Submitting HTCondor job(s) for "+str(n)+" workers"+" with command: "+cmd)
-        # call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
+        call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
         
         worker_dict = {}
-        clusterid = "foo"
-        # clusterid = call.decode().rstrip()[:-1]
+        clusterid = call.decode().rstrip()[:-1]
         worker_dict['ClusterId'] = clusterid
         worker_dict['Iwd'] = tmproot
         try:
-            cmd = "/usr/local/bin/condor_q "+clusterid+" -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
+            cmd = "/home/bengal1/condor/bin/condor_q "+clusterid+" -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
             call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
             logger.error("Error submitting HTCondor jobs, make sure you have a valid proxy and try again")
             return None
         scheddname = call.decode().rstrip()
