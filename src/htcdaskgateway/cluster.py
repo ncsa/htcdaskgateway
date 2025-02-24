@@ -27,16 +27,6 @@ class HTCGatewayCluster(GatewayCluster):
         self.cluster_options = kwargs.get('cluster_options')
         self.image_registry = image_registry
         
-        #set default image if the image is not specified by user
-        if not kwargs.get('image') and (not self.cluster_options or not self.cluster_options.image):
-            kwargs['image'] = self.defaultImage
-            print("Apptainer_image: ", kwargs['image'])
-            self.apptainer_image = self.defaultImage
-        else:
-            print("Apptainer_image: ", kwargs['image'])
-            self.apptainer_image = kwargs.get('image')
-            
-        # kwargs['image'] = self.image_registry + "/" + self.apptainer_image
 
         super().__init__(**kwargs)
    
