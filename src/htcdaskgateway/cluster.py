@@ -116,7 +116,7 @@ request_cpus = 4
 request_memory = 8GB
 container_image=/u/bengal1/icrn/CLIMAS/xmip.sif
 should_transfer_files = yes
-transfer_input_files = """+credentials_dir+""", """+worker_space_dir+""" , """+condor_logdir+"""
+transfer_input_files = ./dask-credentials, ./dask-worker-space , ./condor
 when_to_transfer_output = ON_EXIT_OR_EVICT
 Queue """+str(n)+"""
 """
