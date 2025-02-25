@@ -107,7 +107,7 @@ class HTCGatewayCluster(GatewayCluster):
         #+FERMIHTC_HTCDaskClusterOwner = """+username+"""
         
         # Prepare JDL
-        jdl = """executable = """+tmproot+"""/start.sh
+        jdl = """executable = start.sh
 arguments = """+cluster_name+""" htcdask-worker_$(Cluster)_$(Process)
 output = condor/htcdask-worker$(Cluster)_$(Process).out
 error = condor/htcdask-worker$(Cluster)_$(Process).err
@@ -147,9 +147,8 @@ dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-cr
 
         # We add this to avoid a bug on Farruk's condor_submit wrapper (a fix is in progress)
         os.environ['LS_COLORS']="ExGxBxDxCxEgEdxbxgxcxd"
-
         # Submit our jdl, print the result and call the cluster widget
-        cmd = "/home/bengal1/condor/bin/condor_submit "+tmproot+"/htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
+        cmd = "/home/bengal1/condor/bin/condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
         logger.info(" Submitting HTCondor job(s) for "+str(n)+" workers"+" with command: "+cmd)
         call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
         
