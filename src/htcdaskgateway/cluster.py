@@ -68,7 +68,6 @@ class HTCGatewayCluster(GatewayCluster):
     
     def scale_batch_workers(self, n):
         username = pwd.getpwuid( os.getuid() )[ 0 ]
-        x509_file = f"x509up_u{os.getuid()}"
         security = self.security
         cluster_name = self.name
         tmproot = f"./stage/{username}/{cluster_name}"
@@ -89,22 +88,6 @@ class HTCGatewayCluster(GatewayCluster):
             f.write(security.tls_cert)
         with open(f"{credentials_dir}/dask.pem", 'w') as f:
             f.write(security.tls_key)
-        # with open(f"{credentials_dir}/api-token", 'w') as f:
-        #     f.write(os.environ['JUPYTERHUB_API_TOKEN'])
-
-        # Just pick a random Schedd
-        #schedd_ad = coll.locate(htcondor.DaemonTypes.Schedd)
-            
-        #schedd = htcondor.Schedd()
-        #sub = htcondor.Submit({
-        #    "executable": "/bin/sleep",
-        #    "arguments": "5m",
-        #    "hold": "True",
-        #})
-        #submit_result = schedd.submit(sub, count=10)
-        #print(submit_result.cluster())
-        #+FERMIHTC_HTCDaskCluster = """+cluster_name+"""
-        #+FERMIHTC_HTCDaskClusterOwner = """+username+"""
         
         # Prepare JDL
         jdl = """executable = start.sh
@@ -130,12 +113,12 @@ Queue """+str(n)+"""
 export APPTAINERENV_DASK_GATEWAY_WORKER_NAME=$2
 export APPTAINERENV_DASK_GATEWAY_API_URL="https://dask.software-dev.ncsa.illinois.edu/api"
 export APPTAINERENV_DASK_GATEWAY_CLUSTER_NAME=$1
-#export APPTAINERENV_DASK_DISTRIBUTED__LOGGING__DISTRIBUTED="debug"
+#export APPTAINERENV_DASK_DISTRIBUTED__LOGGING__DISTRIBUTED="info"
 
 worker_space_dir=${PWD}/dask-worker-space/$2
 mkdir -p $worker_space_dir
 hostname -i
-DASK_LOGGING__DISTRIBUTED=debug dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"""+cluster_name+""" --nthreads 1 tls://"""+self.scheduler_proxy_ip+""":8786"""
+DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"""+cluster_name+""" --nthreads 1 tls://"""+self.scheduler_proxy_ip+""":8786"""
     
         with open(f"{tmproot}/start.sh", 'w+') as f:
             f.writelines(singularity_cmd)
@@ -148,7 +131,7 @@ DASK_LOGGING__DISTRIBUTED=debug dask worker --name $2 --tls-ca-file dask-credent
         # We add this to avoid a bug on Farruk's condor_submit wrapper (a fix is in progress)
         os.environ['LS_COLORS']="ExGxBxDxCxEgEdxbxgxcxd"
         # Submit our jdl, print the result and call the cluster widget
-        cmd = "/home/bengal1/condor/bin/condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
+        cmd = "condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
         logger.info(" Submitting HTCondor job(s) for "+str(n)+" workers"+" with command: "+cmd)
         call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
         
@@ -157,7 +140,7 @@ DASK_LOGGING__DISTRIBUTED=debug dask worker --name $2 --tls-ca-file dask-credent
         worker_dict['ClusterId'] = clusterid
         worker_dict['Iwd'] = tmproot
         try:
-            cmd = "/home/bengal1/condor/bin/condor_q "+clusterid+" -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
+            cmd = "condor_q "+clusterid+" -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
             call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
         except subprocess.CalledProcessError:
             logger.error("Error submitting HTCondor jobs, make sure you have a valid proxy and try again")
