@@ -20,13 +20,12 @@ logger = logging.getLogger("htcdaskgateway.GatewayCluster")
 
 class HTCGatewayCluster(GatewayCluster):
     
-    def __init__(self, image_registry="registry.hub.docker.com", **kwargs):
+    def __init__(self, container_image=None, **kwargs):
         self.scheduler_proxy_ip = kwargs.pop('', 'dask.software-dev.ncsa.illinois.edu')
         self.batchWorkerJobs = []
         self.defaultImage = 'coffeateam/coffea-base-almalinux8:0.7.22-py3.10'
         self.cluster_options = kwargs.get('cluster_options')
-        self.image_registry = image_registry
-        
+        self.container_image = container_image
 
         super().__init__(**kwargs)
    
@@ -97,7 +96,7 @@ error = condor/htcdask-worker$(Cluster)_$(Process).err
 log = condor/htcdask-worker$(Cluster)_$(Process).log
 request_cpus = 4
 request_memory = 32GB
-container_image=/u/bengal1/condor/pangeo.sif
+container_image="""+self.container_image+"""
 should_transfer_files = yes
 transfer_input_files = ./dask-credentials, ./dask-worker-space , ./condor
 when_to_transfer_output = ON_EXIT_OR_EVICT

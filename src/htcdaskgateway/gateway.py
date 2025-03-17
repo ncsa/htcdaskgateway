@@ -30,7 +30,9 @@ class HTCGateway(Gateway):
         address = kwargs.pop('address', 'https://dask.software-dev.ncsa.illinois.edu')
         super().__init__(address, **kwargs)
     
-    def new_cluster(self, cluster_options=None, shutdown_on_close=True, **kwargs):
+    def new_cluster(self, cluster_options=None,
+                    shutdown_on_close=True,
+                    container_image=None, **kwargs):
         """Submit a new cluster to the gateway, and wait for it to be started.
         Same as calling ``submit`` and ``connect`` in one go.
         Parameters
@@ -41,6 +43,7 @@ class HTCGateway(Gateway):
             If True (default), the cluster will be automatically shutdown on
             close. Set to False to have cluster persist until explicitly
             shutdown.
+        container_image : str, Path to the apptainer image to run in the workers
         **kwargs :
             Additional cluster configuration options. If ``cluster_options`` is
             provided, these are applied afterwards as overrides. Available
@@ -59,6 +62,7 @@ class HTCGateway(Gateway):
             loop=self.loop,
             shutdown_on_close=shutdown_on_close,
             cluster_options = cluster_options,
+            container_image=container_image,
             **kwargs,
         )
 
