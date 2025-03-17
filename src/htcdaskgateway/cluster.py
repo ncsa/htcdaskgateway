@@ -23,7 +23,6 @@ class HTCGatewayCluster(GatewayCluster):
     def __init__(self, container_image=None, **kwargs):
         self.scheduler_proxy_ip = kwargs.pop('', 'dask.software-dev.ncsa.illinois.edu')
         self.batchWorkerJobs = []
-        self.defaultImage = 'coffeateam/coffea-base-almalinux8:0.7.22-py3.10'
         self.cluster_options = kwargs.get('cluster_options')
         self.container_image = container_image
 
@@ -44,13 +43,7 @@ class HTCGatewayCluster(GatewayCluster):
         n : int
             The number of workers to scale to.
         """
-        #print("Hello, I am the interrupted scale method")
-        #print("I have two functions:")
-        #print("1. Communicate to the Gateway server the new cluster state")
-        #print("2. Call the scale_cluster method on my LPCGateway")
-        #print("In the future, I will allow for Kubernetes workers as well"
         worker_type = 'htcondor'
-        logger.warn(" worker_type: "+str(worker_type))
         try:
             if 'condor' in worker_type:
                 self.batchWorkerJobs = []
@@ -73,10 +66,6 @@ class HTCGatewayCluster(GatewayCluster):
         condor_logdir = f"{tmproot}/condor"
         credentials_dir = f"{tmproot}/dask-credentials"
         worker_space_dir = f"{tmproot}/dask-worker-space"
-
-        # image_name = "/cvmfs/unpacked.cern.ch/" + self.image_registry + "/" + self.apptainer_image
-        
-        # logger.info("Creating with image " + image_name)
 
         os.makedirs(tmproot, exist_ok=True)
         os.makedirs(condor_logdir, exist_ok=True)
