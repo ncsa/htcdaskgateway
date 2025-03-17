@@ -113,8 +113,8 @@ output = condor/htcdask-worker$(Cluster)_$(Process).out
 error = condor/htcdask-worker$(Cluster)_$(Process).err
 log = condor/htcdask-worker$(Cluster)_$(Process).log
 request_cpus = 4
-request_memory = 8GB
-container_image=/u/bengal1/icrn/CLIMAS/xmip.sif
+request_memory = 32GB
+container_image=/u/bengal1/condor/pangeo.sif
 should_transfer_files = yes
 transfer_input_files = ./dask-credentials, ./dask-worker-space , ./condor
 when_to_transfer_output = ON_EXIT_OR_EVICT
@@ -134,8 +134,8 @@ export APPTAINERENV_DASK_GATEWAY_CLUSTER_NAME=$1
 
 worker_space_dir=${PWD}/dask-worker-space/$2
 mkdir -p $worker_space_dir
-
-dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"""+cluster_name+""" --nthreads 1 tls://"""+self.scheduler_proxy_ip+""":8786"""
+hostname -i
+DASK_LOGGING__DISTRIBUTED=debug dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"""+cluster_name+""" --nthreads 1 tls://"""+self.scheduler_proxy_ip+""":8786"""
     
         with open(f"{tmproot}/start.sh", 'w+') as f:
             f.writelines(singularity_cmd)
