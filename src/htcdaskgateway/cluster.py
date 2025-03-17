@@ -131,16 +131,16 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
         # We add this to avoid a bug on Farruk's condor_submit wrapper (a fix is in progress)
         os.environ['LS_COLORS']="ExGxBxDxCxEgEdxbxgxcxd"
         # Submit our jdl, print the result and call the cluster widget
-        cmd = "condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
+        cmd = ". ~/.profile && condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
         logger.info(" Submitting HTCondor job(s) for "+str(n)+" workers"+" with command: "+cmd)
-        call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
+        call = subprocess.check_output(['sh','-c', cmd], cwd=tmproot)
         
         worker_dict = {}
         clusterid = call.decode().rstrip()[:-1]
         worker_dict['ClusterId'] = clusterid
         worker_dict['Iwd'] = tmproot
         try:
-            cmd = "condor_q "+clusterid+" -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
+            cmd = ". ~/.profile && condor_q "+clusterid+" -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
             call = subprocess.check_output(['sh','-c',cmd], cwd=tmproot)
         except subprocess.CalledProcessError:
             logger.error("Error submitting HTCondor jobs, make sure you have a valid proxy and try again")
@@ -158,7 +158,7 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
         
     def destroy_batch_cluster_id(self, clusterid):
         logger.info(" Shutting down HTCondor worker jobs from cluster "+clusterid)
-        cmd = "condor_rm "+self.batchWorkerJobs['ClusterId']+" -name "+self.batchWorkerJobs['ScheddName']
+        cmd = ". ~/.profile && condor_rm "+self.batchWorkerJobs['ClusterId']+" -name "+self.batchWorkerJobs['ScheddName']
         result = subprocess.check_output(['sh','-c',cmd], cwd=self.batchWorkerJobs['Iwd'])
         logger.info(" "+result.decode().rstrip())
 
@@ -169,7 +169,7 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
         
         for htc_cluster in self.batchWorkerJobs:
             try:
-                cmd = "condor_rm "+htc_cluster['ClusterId']+" -name "+htc_cluster['ScheddName']
+                cmd = ". ~/.profile && condor_rm "+htc_cluster['ClusterId']+" -name "+htc_cluster['ScheddName']
                 result = subprocess.check_output(['sh','-c',cmd], cwd=htc_cluster['Iwd'])
                 logger.info(" "+result.decode().rstrip())
             except:
