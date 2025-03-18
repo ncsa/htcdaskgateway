@@ -1,23 +1,12 @@
-import asyncio
+from __future__ import annotations
+
 import logging
-import os
-import random
-import shutil
-import socket
 import sys
-import pwd
-import tempfile
-import weakref
-import pprint
-import subprocess
-import dask
-import yaml
 
 # @author Maria A. - mapsacosta
- 
-from distributed.core import Status
 from dask_gateway import Gateway
-#from .options import Options
+
+# from .options import Options
 from .cluster import HTCGatewayCluster
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -25,14 +14,17 @@ logger = logging.getLogger("htcdaskgateway.HTCGateway")
 
 
 class HTCGateway(Gateway):
-    
     def __init__(self, **kwargs):
-        address = kwargs.pop('address', 'https://dask.software-dev.ncsa.illinois.edu')
+        address = kwargs.pop("address", "https://dask.software-dev.ncsa.illinois.edu")
         super().__init__(address, **kwargs)
-    
-    def new_cluster(self, cluster_options=None,
-                    shutdown_on_close=True,
-                    container_image=None, **kwargs):
+
+    def new_cluster(
+        self,
+        cluster_options=None,
+        shutdown_on_close=True,
+        container_image=None,
+        **kwargs,
+    ):
         """Submit a new cluster to the gateway, and wait for it to be started.
         Same as calling ``submit`` and ``connect`` in one go.
         Parameters
@@ -61,7 +53,7 @@ class HTCGateway(Gateway):
             asynchronous=self.asynchronous,
             loop=self.loop,
             shutdown_on_close=shutdown_on_close,
-            cluster_options = cluster_options,
+            cluster_options=cluster_options,
             container_image=container_image,
             **kwargs,
         )
@@ -75,8 +67,9 @@ class HTCGateway(Gateway):
         n : int
             The number of workers to scale to.
         """
+        assert worker_type == "htcondor"
         return self.sync(self._scale_cluster, cluster_name, n, **kwargs)
-    
+
     async def _stop_cluster(self, cluster_name):
         url = f"{self.address}/api/v1/clusters/{cluster_name}"
         await self._request("DELETE", url)
@@ -90,12 +83,3 @@ class HTCGateway(Gateway):
             The cluster name.
         """
         return self.sync(self._stop_cluster, cluster_name, **kwargs)
-    
-    async def _cluster_report(self, cluster_name, wait=False):
-        params = "?wait" if wait else ""
-        url = f"{self.address}/api/v1/clusters/{cluster_name}{params}"
-        print(url)
-        resp = await self._request("GET", url)
-        data = await resp.json()
-        print(data)
-        return ClusterReport._from_json(self._public_address, self.proxy_address, data)
