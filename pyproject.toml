@@ -43,18 +43,9 @@ Changelog = "https://github.com/ncsa/dagster-ncsa/releases"
 
 [tool.hatch]
 version.source = "vcs"
-build.hooks.vcs.version-file = "src/htcdaskgateway/_version.py"
-build.packages = ["src/htcdaskgateway"]
+build.hooks.vcs.version-file = "htcdaskgateway/_version.py"
+build.packages = ["htcdaskgateway"]
 
-
-[tool.hatch.envs.default]
-features = ["test"]
-scripts.test = "pytest {args}"
-
-[tool.uv]
-dev-dependencies = [
-  "ncsa-htcdaskgateway[test]",
-]
 
 
 [tool.ruff]
