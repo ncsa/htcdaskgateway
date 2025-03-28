@@ -31,8 +31,15 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-  "dask-gateway==2024.1.0"
+  "dask-gateway==2024.1.0",
+  "pexpect",
 ]
+
+[project.optional-dependencies]
+dev = ["ruff"]
+[project.scripts]
+setup_condor = "htcdaskgateway.setup_condor:main"
+
 
 [project.urls]
 Homepage = "https://github.com/ncsa/dagster-ncsa"
@@ -49,7 +56,7 @@ build.packages = ["htcdaskgateway"]
 
 
 [tool.ruff]
-exclude = ["_version.py"]
+exclude = ["_version.py", "docker/test.py"]
 
 [tool.ruff.lint]
 extend-select = [
@@ -78,6 +85,7 @@ extend-select = [
 ignore = [
   "PLR09",    # Too many <...>
   "PLR2004",  # Magic value used in comparison
+  "T201",     # I like print statemtns for cli
 ]
 isort.required-imports = ["from __future__ import annotations"]
 # Uncomment if using a _compat.typing backport
