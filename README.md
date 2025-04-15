@@ -4,6 +4,43 @@ Subclasses the Dask Gateway client to launch dask clusters in Kubernetes, but
 with HTCondor workers. This is a fork of the ingenious original idea by Maria
 Acosta at Fermilab as part of their Elastic Analysis Facility project.
 
+## ICRN Quick Start
+As a user of the Illinois Computes Research Notebooks environment, you will use 
+conda to set up the Condor tools and install this library. Create the following 
+conda.yaml file:
+
+```yaml
+name: dask-gateway
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - htcondor
+  - pip
+  - pip:
+    - ncsa-htcdaskgateway>=1.0.2
+```
+
+From a Jupyter terminal window create the conda environment with:
+
+```bash
+conda env create -f conda.yaml
+conda activate dask-gateway
+```
+
+Now you can use the `setup_condor` script to set up the HTCondor tools. This will request your 
+Illinois password and attempt to log into the HTCondor login node and execute a command that
+generates a token file. This token file is used by the HTCondor tools to authenticate
+with the HTCondor cluster. The script will put the token in your `~/.condor/tokens.d` directory.
+
+It will also write appropriate condor_config settings to the conda environment's condor directory.
+
+When complete, you should be able to view the condor queue from an ICRN terminal with 
+```bash
+condor_q
+```
+
 ## How it Works
 
 This is a drop-in replacement for the official Dask Gateway client. It keeps the
