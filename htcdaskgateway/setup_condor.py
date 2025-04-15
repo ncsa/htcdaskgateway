@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import getpass
 import grp
-import re
 import os
+import re
 import stat
 import sys
 import time
@@ -127,7 +127,6 @@ def main():
     SCHEDD_HOST=htc-login1.campuscluster.illinois.edu
     """
 
-    config_file = condor_dir / Path("condor_config")
     with Path.open(os.environ["CONDOR_CONFIG"], "w") as f:
         f.write(config_content)
 
