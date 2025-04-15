@@ -3,6 +3,7 @@ from __future__ import annotations
 import getpass
 import grp
 import re
+import os
 import stat
 import sys
 import time
@@ -127,11 +128,11 @@ def main():
     """
 
     config_file = condor_dir / Path("condor_config")
-    with Path.open(config_file, "w") as f:
+    with Path.open(os.environ["CONDOR_CONFIG"], "w") as f:
         f.write(config_content)
 
-    print("Please add this to your ~/.bashrc or ~/.bash_profile:")
-    print(f"export CONDOR_CONFIG={config_file}")
+    print("Condor environment configured. Try this command:")
+    print("condor_q")
     # Close the SSH session
     child.sendline("exit")
 
