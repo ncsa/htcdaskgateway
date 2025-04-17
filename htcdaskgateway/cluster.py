@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import getpass
 import logging
 import os
-import pwd
 import subprocess
 import sys
 from pathlib import Path
@@ -54,11 +54,23 @@ class HTCGatewayCluster(GatewayCluster):
             )
             return False
 
+    def _get_stage_dir(self) -> str:
+        """Get the stage directory for the cluster.
+        Returns
+        -------
+        str
+            The stage directory for the cluster.
+        """
+        if "HTCDASK_STAGEDIR" in os.environ:
+            stage_root = os.environ.get("HTCDASK_STAGEDIR")
+        else:
+            stage_root = os.path.join("/u", getpass.getuser(), "htcdask")
+        return os.path.join(stage_root, self.name)
+
     def scale_batch_workers(self, n):
-        username = pwd.getpwuid(os.getuid())[0]
         security = self.security
         cluster_name = self.name
-        tmproot = f"./stage/{username}/{cluster_name}"
+        tmproot = self._get_stage_dir()
         condor_logdir = f"{tmproot}/condor"
         credentials_dir = f"{tmproot}/dask-credentials"
         worker_space_dir = f"{tmproot}/dask-worker-space"
