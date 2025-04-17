@@ -64,8 +64,8 @@ class HTCGatewayCluster(GatewayCluster):
         if "HTCDASK_STAGEDIR" in os.environ:
             stage_root = os.environ.get("HTCDASK_STAGEDIR")
         else:
-            stage_root = os.path.join("/u", getpass.getuser(), "htcdask")
-        return os.path.join(stage_root, self.name)
+            stage_root = Path("/u") / getpass.getuser() / "htcdask"
+        return Path(stage_root) / self.name
 
     def scale_batch_workers(self, n):
         security = self.security
