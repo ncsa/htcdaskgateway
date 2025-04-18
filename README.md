@@ -20,7 +20,10 @@ dependencies:
   - htcondor
   - pip
   - pip:
-      - ncsa-htcdaskgateway>=1.0.2
+      - ncsa-htcdaskgateway>=1.0.4
+      - dask==2025.2.0
+      - distributed==2025.2.0
+      - tornado==6.4.2
 ```
 
 From a Jupyter terminal window create the conda environment with:
@@ -29,6 +32,10 @@ From a Jupyter terminal window create the conda environment with:
 conda env create -f conda.yaml
 conda activate dask-gateway
 ```
+
+_Note:_ Depending on your conda setup, the `conda activate` command may not be
+available you can also activate the environment with the command
+`source activate dask-gateway`.
 
 Now you can use the `setup_condor` script to set up the HTCondor tools. This
 will request your Illinois password and attempt to log into the HTCondor login
@@ -45,6 +52,84 @@ with
 ```bash
 condor_q
 ```
+
+## Use in Jupyter Notebook
+
+In your Jupyter notebook first thing you need to do is activate the conda
+environment:
+
+```shell
+!source activate dask-gateway
+```
+
+Now you can pip install any additional dependencies. For objects that are sent
+to dask or received as return values, you must have the exact same versions.
+
+```shell
+! python -m pip install numpy==2.2.4
+```
+
+### Providing Path to Condor Tools
+
+There are some interesting interactions between conda and Jupyter. Conda has
+installed the condor binaries, but doesn't update PATH in the notebook kernel.
+We use an environment variable to tell the htcdaskgateway client how to find the
+binaries.
+
+In a terminal window:
+
+```shell
+source activate dask-gateway
+which condor_q
+```
+
+Back in your notebook:
+
+```python
+import os
+
+os.environ["CONDOR_BIN_DIR"] = "/home/myhome/.conda/envs/dask-gateway/bin"
+```
+
+### Setting up a dotenv file
+
+It is good practice to keep passwords out of your notebooks. Create a `.env`
+file that contains an entry for `DASK_GATEWAY_PASSWORD`
+
+Add `python-dotenv` to your pip installed dependencies and add this line to your
+notebook:
+
+```python
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+```
+
+### Connecting to the Gateway and Scaling up Cluster
+
+Now we can finally start up a cluster!
+
+```python
+from htcdaskgateway import HTCGateway
+from dask_gateway.auth import BasicAuth
+import os
+
+gateway = HTCGateway(
+    address="https://dask.software-dev.ncsa.illinois.edu",
+    proxy_address=8786,
+    auth=BasicAuth(username=None, password=os.environ["DASK_GATEWAY_PASSWORD"]),
+)
+
+cluster = gateway.new_cluster(
+    image="ncsa/dask-public-health:latest",
+    container_image="/u/bengal1/condor/PublicHealth.sif",
+)
+cluster.scale(2)
+client = cluster.get_client()
+client
+```
+
+This will display the URL to access the cluster dashboard
 
 ## How it Works
 
