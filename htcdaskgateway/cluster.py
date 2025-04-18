@@ -20,6 +20,7 @@ class HTCGatewayCluster(GatewayCluster):
         self.batchWorkerJobs = []
         self.cluster_options = kwargs.get("cluster_options")
         self.container_image = container_image
+        self.condor_bin_dir = os.environ["CONDOR_BIN_DIR"]
 
         super().__init__(**kwargs)
 
@@ -141,7 +142,7 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
         # We add this to avoid a bug on Farruk's condor_submit wrapper (a fix is in progress)
         os.environ["LS_COLORS"] = "ExGxBxDxCxEgEdxbxgxcxd"
         # Submit our jdl, print the result and call the cluster widget
-        cmd = ". ~/.profile && condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
+        cmd = f". ~/.profile && {self.condor_bin_dir}/condor_submit htcdask_submitfile.jdl | grep -oP '(?<=cluster )[^ ]*'"
         logger.info(
             " Submitting HTCondor job(s) for %d workers with command: %s", n, cmd
         )
@@ -153,7 +154,7 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
         worker_dict["Iwd"] = tmproot
         try:
             cmd = (
-                ". ~/.profile && condor_q "
+                f". ~/.profile && {self.condor_bin_dir}/condor_q "
                 + clusterid
                 + " -af GlobalJobId | awk '{print $1}'| awk -F '#' '{print $1}' | uniq"
             )
@@ -176,7 +177,7 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
     def destroy_batch_cluster_id(self, clusterid):
         logger.info(" Shutting down HTCondor worker jobs from cluster %s", clusterid)
         cmd = (
-            ". ~/.profile && condor_rm "
+            f". ~/.profile && {self.condor_bin_dir}/condor_rm "
             + self.batchWorkerJobs["ClusterId"]
             + " -name "
             + self.batchWorkerJobs["ScheddName"]
@@ -194,7 +195,7 @@ DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credenti
         for htc_cluster in self.batchWorkerJobs:
             try:
                 cmd = (
-                    ". ~/.profile && condor_rm "
+                    f". ~/.profile && {self.condor_bin_dir}/condor_rm "
                     + htc_cluster["ClusterId"]
                     + " -name "
                     + htc_cluster["ScheddName"]
