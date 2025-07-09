@@ -97,9 +97,6 @@ error = condor/htcdask-worker$(Cluster)_$(Process).err
 log = condor/htcdask-worker$(Cluster)_$(Process).log
 request_cpus = 4
 request_memory = 32GB
-container_image="""
-            + self.container_image
-            + """
 should_transfer_files = yes
 transfer_input_files = ./dask-credentials, ./dask-worker-space , ./condor
 when_to_transfer_output = ON_EXIT_OR_EVICT
@@ -119,11 +116,17 @@ export APPTAINERENV_DASK_GATEWAY_WORKER_NAME=$2
 export APPTAINERENV_DASK_GATEWAY_API_URL="https://dask.software-dev.ncsa.illinois.edu/api"
 export APPTAINERENV_DASK_GATEWAY_CLUSTER_NAME=$1
 #export APPTAINERENV_DASK_DISTRIBUTED__LOGGING__DISTRIBUTED="info"
-
+export DASK_LOGGING__DISTRIBUTED=info
 worker_space_dir=${PWD}/dask-worker-space/$2
 mkdir -p $worker_space_dir
 hostname -i
-DASK_LOGGING__DISTRIBUTED=info dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"""
+/usr/bin/apptainer exec --bind /scratch --bind /projects --bind scratch.local \
+    --env DASK_LOGGING__DISTRIBUTED=info \
+    --env DASK_GATEWAY_CLUSTER_NAME=$1 \
+    --env DASK_GATEWAY_WORKER_NAME=$2 \
+    --env DASK_GATEWAY_API_URL="https://dask.software-dev.ncsa.illinois.edu/api" """
+    +self.container_image+
+    "dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"
             + cluster_name
             + """ --nthreads 1 tls://"""
             + self.scheduler_proxy_ip
