@@ -15,11 +15,16 @@ logger = logging.getLogger("htcdaskgateway.GatewayCluster")
 
 
 class HTCGatewayCluster(GatewayCluster):
-    def __init__(self, container_image=None, **kwargs):
+    def __init__(self, container_image=None,
+                 memory: str = "32GB",
+                 cpus: int = 4,
+                 **kwargs):
         self.scheduler_proxy_ip = kwargs.pop("", "dask.software-dev.ncsa.illinois.edu")
         self.batchWorkerJobs = []
         self.cluster_options = kwargs.get("cluster_options")
         self.container_image = container_image
+        self.memory = memory
+        self.cpus = cpus
         self.condor_bin_dir = os.environ["CONDOR_BIN_DIR"]
 
         super().__init__(**kwargs)
@@ -87,6 +92,7 @@ class HTCGatewayCluster(GatewayCluster):
             f.write(security.tls_key)
 
         # Prepare JDL
+        resources = f" request_memory = {self.memory} \n request_cpus = {self.cpus}"
         jdl = (
             """executable = start.sh
 arguments = """
@@ -94,9 +100,7 @@ arguments = """
             + """ htcdask-worker_$(Cluster)_$(Process)
 output = condor/htcdask-worker$(Cluster)_$(Process).out
 error = condor/htcdask-worker$(Cluster)_$(Process).err
-log = condor/htcdask-worker$(Cluster)_$(Process).log
-request_cpus = 4
-request_memory = 32GB
+log = condor/htcdask-worker$(Cluster)_$(Process).log"""+resources+"""
 should_transfer_files = yes
 transfer_input_files = ./dask-credentials, ./dask-worker-space , ./condor
 when_to_transfer_output = ON_EXIT_OR_EVICT
@@ -125,7 +129,7 @@ hostname -i
     --env DASK_GATEWAY_CLUSTER_NAME=$1 \
     --env DASK_GATEWAY_WORKER_NAME=$2 \
     --env DASK_GATEWAY_API_URL="https://dask.software-dev.ncsa.illinois.edu/api" """
-    +self.container_image+
+    + self.container_image +
     " dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"
             + cluster_name
             + """ --nthreads 1 tls://"""
