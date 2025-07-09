@@ -124,7 +124,7 @@ export DASK_LOGGING__DISTRIBUTED=info
 worker_space_dir=${PWD}/dask-worker-space/$2
 mkdir -p $worker_space_dir
 hostname -i
-/usr/bin/apptainer exec --bind /scratch --bind /projects --bind scratch.local \
+/usr/bin/apptainer exec --bind /scratch --bind /projects \
     --env DASK_LOGGING__DISTRIBUTED=info \
     --env DASK_GATEWAY_CLUSTER_NAME=$1 \
     --env DASK_GATEWAY_WORKER_NAME=$2 \
