@@ -23,6 +23,8 @@ class HTCGateway(Gateway):
         cluster_options=None,
         shutdown_on_close=True,
         container_image=None,
+        memory="32GB",
+        cpus=4,
         **kwargs,
     ):
         """Submit a new cluster to the gateway, and wait for it to be started.
@@ -36,6 +38,12 @@ class HTCGateway(Gateway):
             close. Set to False to have cluster persist until explicitly
             shutdown.
         container_image : str, Path to the apptainer image to run in the workers
+        cpus: int number of CPUs to request for each worker
+        memory: str amount of memory to request for each worker Characters may be appended
+                to a numerical value to indicate units. K or KB indicates KiB,
+                2^10 numbers of bytes. M or MB indicates MiB, 2^20 numbers of bytes.
+                G or GB indicates GiB, 2^30 numbers of bytes. T or TB indicates TiB,
+                2^40 numbers of bytes.
         **kwargs :
             Additional cluster configuration options. If ``cluster_options`` is
             provided, these are applied afterwards as overrides. Available
@@ -55,6 +63,8 @@ class HTCGateway(Gateway):
             shutdown_on_close=shutdown_on_close,
             cluster_options=cluster_options,
             container_image=container_image,
+            memory=memory,
+            cpus=cpus,
             **kwargs,
         )
 
