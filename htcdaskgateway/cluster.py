@@ -126,7 +126,7 @@ hostname -i
     --env DASK_GATEWAY_WORKER_NAME=$2 \
     --env DASK_GATEWAY_API_URL="https://dask.software-dev.ncsa.illinois.edu/api" """
     +self.container_image+
-    "dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"
+    " dask worker --name $2 --tls-ca-file dask-credentials/dask.crt --tls-cert dask-credentials/dask.crt --tls-key dask-credentials/dask.pem --worker-port 10000:10070 --no-nanny --scheduler-sni daskgateway-"
             + cluster_name
             + """ --nthreads 1 tls://"""
             + self.scheduler_proxy_ip
