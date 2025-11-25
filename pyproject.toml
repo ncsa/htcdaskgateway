@@ -11,7 +11,7 @@ authors = [
 ]
 description = "Launches a Dask Gateway cluster in K8s and joins HTCondor workers to it"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 1 - Planning",
   "Intended Audience :: Science/Research",
@@ -31,7 +31,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-  "dask-gateway==2024.1.0",
+  "dask-gateway==2025.4.0",
   "pexpect",
 ]
 
