@@ -91,7 +91,7 @@ class HTCGatewayCluster(GatewayCluster):
             f.write(security.tls_key)
 
         # Prepare JDL
-        resources = f" request_memory = {self.memory} \n request_cpus = {self.cpus}"
+        resources = f"\n request_memory = {self.memory} \n request_cpus = {self.cpus}"
         jdl = (
             """executable = start.sh
 arguments = """
